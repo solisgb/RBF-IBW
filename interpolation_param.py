@@ -28,11 +28,11 @@ El nombre del fichero de resultados se forma: nombre de FPOINTS +
    SHORT_NAME_4_VARIABLE + método de interpolación utilizado + extensión.
    También se crea un fichero de metadatos de la interpolación
 """
-PATHIN = r'C:\Users\solis\Documents\work\interpol'
+PATHIN = r'C:\Users\solis\Documents\work\manantiales'
 PATHOUT = PATHIN
-FPOINTS = 'manantialesh1.txt'
+FPOINTS = 'masub_centroids.txt'
 skip_lines: int = 1
-SHORT_NAME_4_VARIABLE = 'pd'
+SHORT_NAME_4_VARIABLE = 'pmd'
 
 """
 DB con los datos.
@@ -46,19 +46,25 @@ DB con los datos.
         columna siguiente: Fecha
         columna siguiente: v (valor del dato)
 """
-dbMeteoro = r'C:\Users\solis\Documents\DB\AEMET_CHS.accdb'
-SELECT1 = "SELECT Estaciones.ID, Estaciones.X, Estaciones.Y, " +\
-              "Estaciones.ALTITUD as Z, PD.Fecha, PD.VALUE as v " +\
-          "FROM Estaciones INNER JOIN PD ON Estaciones.ID = PD.ID " +\
-          "WHERE PD.Fecha=?;"
+dbMeteoro = r'C:\Users\solis\Documents\DB\aemet\EstacionesEspanya\ptexistencias.accdb'
+# =============================================================================
+# SELECT1 = "SELECT Estaciones.ID, Estaciones.X, Estaciones.Y, " +\
+#               "Estaciones.ALTITUD as Z, PD.Fecha, PD.VALUE as v " +\
+#           "FROM Estaciones INNER JOIN PD ON Estaciones.ID = PD.ID " +\
+#           "WHERE PD.Fecha=?;"
+# =============================================================================
+SELECT1 = "SELECT Pexistencias.ind, Pexistencias.utmx as X, " +\
+              "Pexistencias.utmy as Y, 0 AS Z, pmes.fecha, pmes.prec as v " +\
+          "FROM Pexistencias INNER JOIN pmes ON Pexistencias.ind = pmes.indic "\
+          "WHERE pmes.fecha=?;"
 
 """ paso de tiempo de los datos """
-time_step = 'day'
+time_step = 'month'
 
 """ fechas entre las que se interpola, ambas incluidas
     fecha1(day1, month1, year1), fecha2(day2... """
-day1, month1, year1 = 1, 1, 1985
-day2, month2, year2 = 31, 12, 2000
+day1, month1, year1 = 31, 1, 1950
+day2, month2, year2 = 31, 10, 2019
 
 """ METODOS DE INTERPOLACION """
 """ Para idw
@@ -75,7 +81,7 @@ mindistidw: float = 1.0
 """ Para rbf
     krbf: número de puntos que intervienen en la interpolación de un punto;
         para un número grande y según la variable a interpolar el método
-        da error -matriz no singular-
+        da error -matriz no singular- (min 2)
     epsrbf: si la suma de los valores de los krbf puntos más próximos <= eps,
         el valor intepolado se asigna 0; es una condición pensada para trabajar
         con variables positivas con muchos ceros; si no se quiere que
@@ -85,7 +91,7 @@ mindistidw: float = 1.0
         próximo
     smooth: 0. no smooth >0. smooth (ver doc en scipy)
     force0: si 1 los valores interpolados < 0 se igualen a cero 0
-    krbf: número de puntos con los que se realiza la interpolación (min 2) """
+"""
 krbf: int = 4
 epsrbf: float = 1.
 mindistrbf: float = 10.

@@ -51,10 +51,11 @@ def selectOption(options: (list, tuple), headers: (list, tuple)) -> int:
 def menu():
     """
     llama a una de las funciones de interolación
+    el contenido de options[1:] debe coincidir en el de funcs en la función
+        rbflocal_serie_temporal
     """
-
     options = ('idw', 'multiquadric', 'inverse', 'gaussian', 'linear',
-               'thin_plate')
+               'cubic', 'quintic', 'thin_plate')
     headers = ('Programa de interpolación', 'Selecciona un método')
 
     iop = selectOption(options, headers)
@@ -388,13 +389,15 @@ def rbflocal_serie_temporal(rbf):
         valor de Z pon en todos los puntos un valor cte, por ej 0
     Los datos son una serie temporal; los puntos con datos varían en el
         tiempo
+    el contenido de options[1:] debe coincidir en el de funcs en la función
+        rbflocal_serie_temporal
     """
     from datetime import date, timedelta
     from os.path import join
     from time import time
     import interpolation_param as par
-
-    funcs = ('multiquadric', 'inverse', 'gaussian', 'linear', 'thin_plate')
+    funcs = ('multiquadric', 'inverse', 'gaussian', 'linear',
+             'cubic', 'quintic', 'thin_plate')
     time_steps = ('diaria', 'day', 'mensual', 'month', 'anual', 'year')
     PRINT_INTERVAL = 5.
 
@@ -403,7 +406,13 @@ def rbflocal_serie_temporal(rbf):
 
     if par.time_step in time_steps[:2]:
         tstep = 1
+        tstep_type = 1
         time_step = timedelta(days=1)
+        datei = date(par.year1, par.month1, par.day1)
+        datefin = date(par.year2, par.month2, par.day2)
+    elif par.time_step in time_steps[2:4]:
+        tstep = 1
+        tstep_type = 2
         datei = date(par.year1, par.month1, par.day1)
         datefin = date(par.year2, par.month2, par.day2)
     else:
@@ -483,7 +492,12 @@ def rbflocal_serie_temporal(rbf):
             zi = np.where(zi < 0., 0., zi)
         for i in range(len(fidi)):
             f.write(f'{fidi[i]}\t{dateStr}\t{zi[i]:0.1f}\n')
-        datei = datei + time_step
+        if tstep_type == 1:
+            datei = datei + time_step
+        elif tstep_type == 2:
+            datei = addmonth_lastday(datei)
+        else:
+            raise ValueError(f'tstep_type {tstep_type} no implementado')
 
     elapsed_time = time() - start_time
     print(f'La interpolación tardó {elapsed_time:0.1f} s')
@@ -583,3 +597,25 @@ def rbfInterpolation3Da(rbf):
             f.write(f'{fidi[i]}\t{dateStr}\t{values[i]:0.2f}\n')
         datei = datei + time_step
     _ = input(MSG_FIN_PROCESO)
+
+
+def addmonth_lastday(fecha):
+    """
+    Añade un mesa la fecha y pone al día el último del mes
+    ej.: date(1957,1,1:31) -> datedate(1957,2,28)
+    input:
+        fecha. date type
+    output:
+        date type
+    """
+    from datetime import date
+    from calendar import monthrange
+    year = fecha.year
+    month = fecha.month
+    if month < 12:
+        month += 1
+    else:
+        year += 1
+        month = 1
+    day = monthrange(year, month)[1]
+    return date(year, month, day)
