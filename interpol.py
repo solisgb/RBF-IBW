@@ -459,6 +459,9 @@ def rbflocal_serie_temporal(rbf):
                 print(dateStr)
         cur.execute(par.SELECT1, (datei,))
         data = [row for row in cur]
+        if len(data) < par.krbf:
+            logging.append(f'No datos en {dateStr}')
+            continue
         if xi.shape[1] == 2:
             data = np.array([[row.X, row.Y, row.v] for row in data])
             tree = spatial.cKDTree(data[:, [0, 1]])
@@ -470,7 +473,7 @@ def rbflocal_serie_temporal(rbf):
         for i in range(len(fidi)):
             dist, ii = tree.query(xi[i,:], k=par.krbf)
             if dist[0] <= par.mindistrbf:
-                zi[i] = data[ii, ival]
+                zi[i] = data[ii[0], ival]
                 continue
             for j in range(par.krbf):
                 data_sl[j] = data[ii[j]]
@@ -478,16 +481,33 @@ def rbflocal_serie_temporal(rbf):
                 zi[i] = 0.
                 continue
             if xi.shape[1] == 2:
-                rbfi = interpolate.Rbf(data_sl[:, 0], data_sl[:, 1],
-                                       data_sl[:, 2], function=rbf,
-                                       smooth=par.smooth)
-                zi[i] = rbfi(xi[:, 0], xi[:, 1])
+                try:
+                    rbfi = interpolate.Rbf(data_sl[:, 0], data_sl[:, 1],
+                                           data_sl[:, 2], function=rbf,
+                                           smooth=par.smooth)
+                    do_interpolation = True
+                except np.linalg.LinAlgError as er:
+                    logging.append(f'punto\t{i:d}\tfecha {dateStr} {er}',
+                                   toScreen = False)
+                    do_interpolation = False
+                if do_interpolation:
+                    zi[i] = rbfi(xi[i, 0], xi[i, 1])
+                else:
+                    zi[i] = data[ii[0], ival]
             else:
-                rbfi = interpolate.Rbf(data_sl[:, 0], data_sl[:, 1],
-                                       data_sl[:, 2], data_sl[:, 3],
-                                       function=rbf, smooth=par.smooth)
-                zi[i] = rbfi(xi[i, 0], xi[i, 1], xi[i, 2])
-
+                try:
+                    rbfi = interpolate.Rbf(data_sl[:, 0], data_sl[:, 1],
+                                           data_sl[:, 2], data_sl[:, 3],
+                                           function=rbf, smooth=par.smooth)
+                    do_interpolation = True
+                except np.linalg.LinAlgError as er:
+                    logging.append(f'punto\t{i:d}\tfecha {dateStr} {er}',
+                                   toScreen = False)
+                    do_interpolation = False
+                if do_interpolation:
+                    zi[i] = rbfi(xi[i, 0], xi[i, 1], xi[i, 2])
+                else:
+                    zi[i] = data[ii[0], ival]
         if par.force0 == 1:
             zi = np.where(zi < 0., 0., zi)
         for i in range(len(fidi)):
@@ -517,6 +537,11 @@ def rbflocal_serie_temporal(rbf):
         f.write(f'db de los datos, {par.dbMeteoro}\n')
         f.write(f'número de puntos interpolados {fidi.size:d}\n')
         f.write(f'tiempo transcurrido, {elapsed_time:0.1f} s\n')
+        f.write(f'incidencias\n')
+        a = logging.get_as_str()
+        if a:
+            f.write(f'{a}\n')
+
     _ = input(MSG_FIN_PROCESO)
 
 
