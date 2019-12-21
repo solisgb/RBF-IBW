@@ -293,7 +293,13 @@ def idw_serie_temporal():
 
     if par.time_step in time_steps[:2]:
         tstep = 1
+        tstep_type = 1
         time_step = timedelta(days=1)
+        datei = date(par.year1, par.month1, par.day1)
+        datefin = date(par.year2, par.month2, par.day2)
+    elif par.time_step in time_steps[2:4]:
+        tstep = 1
+        tstep_type = 2
         datei = date(par.year1, par.month1, par.day1)
         datefin = date(par.year2, par.month2, par.day2)
     else:
@@ -315,7 +321,7 @@ def idw_serie_temporal():
                          '3 o 4: id del punto, x, y, (z)')
     rows = None
     z = np.empty((len(xi), par.kidw), np.float32)
-    zi = np.empty((len(xi)), np.float32)  # array con los valores interpolados
+    zi = np.empty((len(xi)), np.float32)  # array para los valores interpolados
 
     # datos para hacer las interpolaciones
     con = pyodbc.connect(cstrAemet)
@@ -349,7 +355,13 @@ def idw_serie_temporal():
 
         for i in range(len(fidi)):
             f.write(f'{fidi[i]}\t{dateStr}\t{zi[i]:0.1f}\n')
-        datei = datei + time_step
+
+        if tstep_type == 1:
+            datei = datei + time_step
+        elif tstep_type == 2:
+            datei = addmonth_lastday(datei)
+        else:
+            raise ValueError(f'tstep_type {tstep_type} no implementado')
 
     elapsed_time = time() - start_time
     print(f'La interpolación tardó {elapsed_time:0.1f} s')
@@ -369,6 +381,10 @@ def idw_serie_temporal():
         f.write(f'db de los datos, {par.dbMeteoro}\n')
         f.write(f'número de puntos interpolados {fidi.size:d}\n')
         f.write(f'tiempo transcurrido, {elapsed_time:0.1f} s\n')
+        f.write(f'incidencias\n')
+        a = logging.get_as_str()
+        if a:
+            f.write(f'{a}\n')
     _ = input(MSG_FIN_PROCESO)
 
 

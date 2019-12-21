@@ -58,11 +58,23 @@ SELECT1 = "SELECT Pexistencias.ind, Pexistencias.utmx as X, " +\
           "FROM Pexistencias INNER JOIN pmes ON Pexistencias.ind = pmes.indic "\
           "WHERE pmes.fecha=?;"
 
-""" paso de tiempo de los datos """
+""" paso de tiempo de los datos
+day. dia a día desde la fecha inicial hasta la fecha final
+month. los datos mensuales están asociados a fechas; cada dato está
+    asociado a la última fecha del mes; el programa está preparado para tratar
+    estos saltos diariso variables entre fechas. Si la bdd los datos mensuales
+    no están almacenados de esta manera no encontrará datos para hacer las
+    interpolaciones
+"""
 time_step = 'month'
 
 """ fechas entre las que se interpola, ambas incluidas
-    fecha1(day1, month1, year1), fecha2(day2... """
+    fecha1(day1, month1, year1), fecha2(day2...
+    Si time step=='month' las fechas inicial y final es aconsejable que sea
+        el último días del mes. ¿Que pasaría si day1==15; en esa fecha no
+        encontraría ningún dato y no interpolaría, pero la siguiente fecha
+        ya sería el último día del mes siguiente
+"""
 day1, month1, year1 = 31, 1, 1950
 day2, month2, year2 = 31, 10, 2019
 
@@ -74,7 +86,7 @@ day2, month2, year2 = 31, 10, 2019
         menor que eps, la distancia se aumenta a mindist
     mindistidw: ver eps """
 poweridw: float = 2.0
-kidw: int = 4
+kidw: int = 8
 epsidw: float = 0.001
 mindistidw: float = 1.0
 
